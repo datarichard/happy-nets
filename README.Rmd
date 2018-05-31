@@ -1,17 +1,16 @@
 ---
 title: "Causal network analysis of happiness and wellbeing"
 author: "Richard Morris"
-date: "31/05/2018"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.path = "figures/")
 ```
 
 ## Introduction
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 Answering causal questions in the social sciences (e.g., economics, public health) is difficult due to the inability to intervene in the causal variable and measure the impact of the intervention. However with the growing availability of large observational datasets and advances in statistical methods, other approaches to exploring causal questions are increasingly possible. Here we explore the application of a Bayesian network to answer a causal question in the Household Income and Labour Dynamics in Australia (HILDA) survey.  
 
@@ -52,8 +51,8 @@ In this experiment we will use the ARTIVA package (in R) to estimate the causal 
 ```{r, libraries}
 library(tidyverse)
 library(ARTIVA)
-source("traceNetwork.R")
-source("PlotBubbleGraph.R")
+source("src/traceNetwork.R")
+source("src/PlotBubbleGraph.R")
 ```
   
 ### Methods
@@ -135,7 +134,7 @@ print(end_time - start_time)
 The estimation of this network with nine variables takes around 6 days to run. The result table is an 81 row by 7 column table listing the posterior probability of each edge `PostProb` (thresholded to edges with a Pr > 0.5), and the causal strength of the edge `CoeffMean`. Negative values indicate an inhibitory or preventative causal influence:
 
 ```{r, echo=FALSE}
-results1 <- read.delim('ARTIVA_StationaryNetwork_1.txt')
+results1 <- read.delim('data/ARTIVA_StationaryNetwork_1.txt')
 results1
 ```
 
@@ -163,7 +162,7 @@ The Reingold-Tilford graph reveals the mental health score `ghmh` occupies the s
 Here we replicate Experiment 1 with a new (independent) sample. Time taken was 6.2 days.
 
 ```{r, Experiment 1b results, echo=FALSE}
-results2 <- read.delim('ARTIVA_StationaryNetwork_2.txt')
+results2 <- read.delim('data/ARTIVA_StationaryNetwork_2.txt')
 results2
 traceNetwork(results2, 0.95, layout = 'circle')
 traceNetwork(results2, 0.95, layout = 'reingold.tilford')
@@ -316,7 +315,7 @@ write_csv(CPresults, 'results/CPresults.csv')
 The analysis took X days, Y hrs, Z min to complete (to be done). The posterior probability of a change point in each wave for each individual and for each variable was calculated.
 
 ```{r, echo=FALSE}
-CPresults <- read.csv('CPresults.csv')
+CPresults <- read.csv('data/CPresults.csv')
 CPresults %>%
   filter(posterior > 0) %>%
   group_by(wave) %>%

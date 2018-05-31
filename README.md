@@ -1,12 +1,10 @@
 Causal network analysis of happiness and wellbeing
 ================
 Richard Morris
-31/05/2018
+01 June, 2018
 
 Introduction
 ------------
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
 Answering causal questions in the social sciences (e.g., economics, public health) is difficult due to the inability to intervene in the causal variable and measure the impact of the intervention. However with the growing availability of large observational datasets and advances in statistical methods, other approaches to exploring causal questions are increasingly possible. Here we explore the application of a Bayesian network to answer a causal question in the Household Income and Labour Dynamics in Australia (HILDA) survey.
 
@@ -115,8 +113,8 @@ library(ARTIVA)
     ##     lowess
 
 ``` r
-source("traceNetwork.R")
-source("PlotBubbleGraph.R")
+source("src/traceNetwork.R")
+source("src/PlotBubbleGraph.R")
 ```
 
 ### Methods
@@ -295,7 +293,7 @@ Bubble graphs take various forms. Shown below are two variations: **circle** and
 traceNetwork(results1, 0.95, layout = 'circle') 
 ```
 
-![](README_files/figure-markdown_github/Exp%201%20circle-1.png)
+![](figures/Exp%201%20circle-1.png)
 
 We can see by the number of arrows pointing to the mental health score `ghmh` that it occupies a central position (i.e., a hub) in this causal network. Network metrics such as centrality and assortivity can be calculated to confirm this impression (to be done). However the circle layout doesn't reveal a great deal of structure in the network. For that, we must turn to other variants such as the Reingold-Tilford.
 
@@ -307,7 +305,7 @@ traceNetwork(results1, 0.95, layout = 'reingold.tilford')
     ## At structural_properties.c:3338 :graph contains a cycle, partial result is
     ## returned
 
-![](README_files/figure-markdown_github/Exp%201%20Reingold-Tilford-1.png)
+![](figures/Exp%201%20Reingold-Tilford-1.png)
 
 The Reingold-Tilford graph reveals the mental health score `ghmh` occupies the sole central position in this causal network, under which every other node can be laid in a hierarchy of layers. At the bottom of the network, the relationship variables (based on housework `lsshare`, `lshrhw`) have no direct association with mental health, but every other variable does. However both housework scores indirectly affect mental health via personal control `lsrush` (as does weekly income `wscei`).
 
@@ -400,13 +398,13 @@ Here we replicate Experiment 1 with a new (independent) sample. Time taken was 6
     ## 80  lshrhw lsshare       2    14   1.0000  -0.06189            0.5
     ## 81 lsshare lsshare       2    14   1.0000   0.46443            0.5
 
-![](README_files/figure-markdown_github/Experiment%201b%20results-1.png)
+![](figures/Experiment%201b%20results-1.png)
 
     ## Warning in layout_as_tree(structure(list(9, TRUE, c(0, 1, 2, 3, 4, 5, 6, :
     ## At structural_properties.c:3338 :graph contains a cycle, partial result is
     ## returned
 
-![](README_files/figure-markdown_github/Experiment%201b%20results-2.png)
+![](figures/Experiment%201b%20results-2.png)
 
 In comparison to the original sample, there are some differences apparent in the centrality/betweenness of `losat` and `lssupvl`. In the original sample, `ghmh` was clearly the most central variable, receiving the majority of inputs from the other variables. However here `losat` and `lssupvl` have the same number or more inputs than `ghmh`.
 
@@ -591,7 +589,7 @@ CPresults %>%
          caption = 'ARTIVAnet_bysubject.r')
 ```
 
-![](README_files/figure-markdown_github/Exp%202%20by%20variable-1.png)
+![](figures/Exp%202%20by%20variable-1.png)
 
 There is no specific variable with peaks at or near the time of the life event (wave 0).
 
@@ -607,6 +605,6 @@ CPresults %>%
     geom_smooth(method = 'loess', span = 0.45)
 ```
 
-![](README_files/figure-markdown_github/Exp%202%20by%20maximum-1.png)
+![](figures/Exp%202%20by%20maximum-1.png)
 
 Here there looks like there is a slight (very slight!) peak in the second wave after the negative life event. To be continued...
