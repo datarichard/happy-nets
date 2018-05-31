@@ -1,8 +1,8 @@
 ---
-title: "hello-world"
+title: "Causal network analysis of happiness and wellbeing"
 author: "Richard Morris"
 date: "31/05/2018"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
