@@ -34,15 +34,15 @@ Experiment 1
 
 There are a variety of variables in the HILDA survey that we could include in our causal model. Initially we will focus on nine variables that represent indicators of **happiness, health, finance, social support, personal control, and relationship satisfaction**. These variables have been selected to represent each category while minimising selection bias as much as possible (e.g., none of the variables depend upon employment or relationship status)
 
-1.  'ghmh', MH-I5
-2.  'losat', life satisfaction
-3.  'losatyh', health satisfaction
-4.  'wscei', weekly gross wages/salary
-5.  'lssupac', I don't have anyone I can confide in
-6.  'lssupvl', I often feel very lonely
-7.  'lsrush', feeling rushed
-8.  'lshrhw', hours per week housework
-9.  'lsshare', share of housework
+> 1.  'ghmh', MH-I5
+> 2.  'losat', life satisfaction
+> 3.  'losatyh', health satisfaction
+> 4.  'wscei', weekly gross wages/salary
+> 5.  'lssupac', I don't have anyone I can confide in
+> 6.  'lssupvl', I often feel very lonely
+> 7.  'lsrush', feeling rushed
+> 8.  'lshrhw', hours per week housework
+> 9.  'lsshare', share of housework
 
 In this experiment we will use the ARTIVA package (in R) to estimate the causal structure that may exist between the variables.
 
@@ -425,20 +425,20 @@ Experiment 2 will gather the individuals who report a single negative life event
 
 The variables included in the analysis were:
 
-> 'losat' How satisfied are you with your life
-> 'losatyh' Your health
-> 'losateo' Your employment opportunities
-> 'losatfs' Your financial situation
-> 'losatft' The amount of free time you have
-> 'losathl' The home in which you live
-> 'losatlc' Feeling part of your local community
-> 'losatnl' The neighbourhood in which you live
-> 'losatsf' How safe you feel
-> 'lssupnh' I often need help from others
-> 'lssupac' I don't have anyone I can confide in
-> 'lssuplt' I have no one to lean on
-> 'lssupvl' I often feel very lonely
-> 'ghmh' mental health
+> 1.  'losat', How satisfied are you with your life
+> 2.  'losatyh', Your health
+> 3.  'losateo', Your employment opportunities
+> 4.  'losatfs', Your financial situation
+> 5.  'losatft', The amount of free time you have
+> 6.  'losathl', The home in which you live
+> 7.  'losatlc', Feeling part of your local community
+> 8.  'losatnl', The neighbourhood in which you live
+> 9.  'losatsf', How safe you feel
+> 10. 'lssupnh', I often need help from others
+> 11. 'lssupac', I don't have anyone I can confide in
+> 12. 'lssuplt', I have no one to lean on
+> 13. 'lssupvl', I often feel very lonely
+> 14. 'ghmh', mental health
 
 This includes all the life satisfaction variables, as well as social support variables, but not the financial, personal control or relationship variables in Experiment 1 (to be done)
 
@@ -559,19 +559,17 @@ write_csv(CPresults, 'results/CPresults.csv')
 
 The analysis took X days, Y hrs, Z min to complete (to be done). The posterior probability of a change point in each wave for each individual and for each variable was calculated.
 
-    ## # A tibble: 10 x 4
-    ##     wave Probability     sem     n
-    ##    <int>       <dbl>   <dbl> <int>
-    ##  1    -3      0.0874 0.00416   544
-    ##  2    -2      0.0604 0.00257   540
-    ##  3    -1      0.0690 0.00345   540
-    ##  4     0      0.0682 0.00343   538
-    ##  5     1      0.0678 0.00345   537
-    ##  6     2      0.0702 0.00358   538
-    ##  7     3      0.0621 0.00310   543
-    ##  8     4      0.0659 0.00319   538
-    ##  9     5      0.0604 0.00274   539
-    ## 10     6      0.0788 0.00370   543
+    ##    wave Probability    sem   n
+    ## 1    -3      0.0874 0.0042 544
+    ## 2    -2      0.0604 0.0026 540
+    ## 3    -1      0.0690 0.0035 540
+    ## 4     0      0.0682 0.0034 538
+    ## 5     1      0.0678 0.0035 537
+    ## 6     2      0.0702 0.0036 538
+    ## 7     3      0.0621 0.0031 543
+    ## 8     4      0.0659 0.0032 538
+    ## 9     5      0.0604 0.0027 539
+    ## 10    6      0.0788 0.0037 543
 
 There is clearly no peak in the average posterior probability of a changepoint near the time of negative life event (wave 0). The *n* in the table above represents the number of datapoints contributing to each mean score. It is a product of the number of variables (e.g., 14) and number of respondents in that wave (e.g., 39).
 
