@@ -30,8 +30,6 @@ This dataset allows us to ask what variables may influence mental health, and vi
 Experiment 1
 ------------
 
-------------------------------------------------------------------------
-
 There are a variety of variables in the HILDA survey that we could include in our causal model. Initially we will focus on nine variables that represent indicators of **happiness, health, finance, social support, personal control, and relationship satisfaction**. These variables have been selected to represent each category while minimising selection bias as much as possible (e.g., none of the variables depend upon employment or relationship status)
 
 > 1.  'ghmh', MH-I5
@@ -119,8 +117,6 @@ source("src/PlotBubbleGraph.R")
 
 ### Methods
 
-------------------------------------------------------------------------
-
 In Experiment 1 we will determine the causal network between nine variables, among the 3206 people with a complete set of variable scores in each wave. However due to computational limitations, we will randomly sample ***n* = 1000** from the total sample. In this way, a unique set of n = 1000 can be obtained up to three times to repeat the experiment and thus test the **replicability** of the obtained causal network.
 
 ``` r
@@ -192,10 +188,7 @@ end_time <- Sys.time()
 print(end_time - start_time)
 ```
 
-Results
--------
-
-------------------------------------------------------------------------
+### Results
 
 The estimation of this network with nine variables takes around 6 days to run. The result table is an 81 row by 7 column table listing the posterior probability of each edge `PostProb` (thresholded to edges with a Pr &gt; 0.5), and the causal strength of the edge `CoeffMean`. Negative values indicate an inhibitory or preventative causal influence:
 
@@ -311,8 +304,6 @@ The Reingold-Tilford graph reveals the mental health score `ghmh` occupies the s
 
 #### Experiment 1 replication
 
-------------------------------------------------------------------------
-
 Here we replicate Experiment 1 with a new (independent) sample. Time taken was 6.2 days.
 
     ##     Parent  Target CPstart CPend PostProb CoeffMean edgesThreshold
@@ -413,13 +404,9 @@ However the Reingold-Tilford layout appears to show that `ghmh` occupies the sam
 Experiment 2
 ------------
 
-------------------------------------------------------------------------
-
 One assumption of Experiment 1 is the network around mental health is stable across the 14 years of HILDA among our sample. This obviously may not be true for an individual, especially if some personal event has occurred which challenges their life or mental health. A unique feature of ARTIVA is that it can estimate networks which change over time (time-varying networks) by identifying *changepoints* and therefore the different subnetworks on either side of the changepoint. The HILDA dataset offers a unique opportunity to exploit this since it contains self-reported details of ' major life-events' for each respondant in each year. In the present experiment, we identify respondents in HILDA who report a single major life event in the 14 years of the survey, and test whether ARTIVA can detect a changepoint around the time of that life event.
 
 ### Methods
-
-------------------------------------------------------------------------
 
 Experiment 2 will gather the individuals who report a single negative life event in the 14 years of the survey and test for changepoints in each individual.
 
@@ -554,8 +541,6 @@ write_csv(CPresults, 'results/CPresults.csv')
 ```
 
 ### Results
-
-------------------------------------------------------------------------
 
 The analysis took X days, Y hrs, Z min to complete (to be done). The posterior probability of a change point in each wave for each individual and for each variable was calculated.
 
