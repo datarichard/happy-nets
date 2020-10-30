@@ -1,0 +1,50 @@
+Causal variables
+
+Life Satisfaction [0:10, all waves, all pop]
+-------------------------------------------------------------
+losat    How satisfied are you with your life
+losateo  Your employment opportunities [employed only]
+*losatfs Your financial situation
+losatft  The amount of free time you have
+losathl  The home in which you live
+losatlc  Feeling part of your local community
+losatnl  The neighbourhood in which you live
+losatsf  How safe you feel
+losatyh  Your health
+
+
+Lifestyle [missing = no SCQ]
+-------------------------------------------------------------
+lspact  How often participate in physical activity [1:6, all waves, all pop]
+lsrush  How often feel rushed or pressed for time [1:5, all waves, all pop]
+lshrerr Hours per week - Household errands [all waves, all pop]
+lshrhw  Hours per week - Housework [all waves, all pop]
+
+Relationship satisfaction [missing = no SCQ]
+-------------------------------------------------------------
+lsrelsp Satisfaction with: Partner
+lsshare Share of work around the house [1:5, all waves, all pop]
+
+Social support [all waves]
+-------------------------------------------------------------
+lsclub 	 current active member of local club [yes/no, all waves]
+lssocal	 frequency of social contact outside home [1:7, all waves]
+*lssupnh I often need help from others but can't get it [1:7, all waves]
+lssupac	 I don't have anyone I can confide in [1:7, all waves, all pop]
+lssuplt  I have no one to lean on in times of trouble [1:7, all waves, all pop]
+lssocal  How often get together socially with friends/relatives not living with you? [1:7, all waves, all pop]
+lssupvl  I often feel very lonely [1:7, all waves, all pop]
+
+Job security [employed pop]
+-------------------------------------------------------------
+jomsf - I have a secure future in my job [1:7, all waves]
+jbmploj - Percent chance of losing job in the next 12 months [0:100, all waves]
+jomwf - I worry about the future of my job [1:7, all waves]
+jbmssec - Job security satisfaction [1:10, all waves]
+
+pjljr - main reason stopped working since last interview [3=got laid off etc] (not working, prev employed)
+pjljrea - main reason stopped working in that job since last interview [3=got laid off etc] (changed job)
+pjorea - main reason stopped working in that job [3=got laid off etc] (employed)
+pjotrea - main reason stopped working in last job [3=got laid off etc] (not working, had job)
+ujljrea - main reason stopped working in that job [3=got laid off etc] (not currently in paid work)
+ujljrsn - main reason stopped working in that job [3=got laid off etc] (unemployed)

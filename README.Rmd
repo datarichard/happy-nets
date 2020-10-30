@@ -1,352 +1,530 @@
 ---
-title: "Causal network analysis of happiness and wellbeing"
+title: "Social support network structure determines resilience to personal disasters"
 author: "Richard Morris"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      eval=F,
                       fig.path = "figures/")
+library(tidyverse)
 ```
 
 ## Introduction
 
-Answering causal questions in the social sciences (e.g., economics, public health) is difficult due to the inability to intervene in the causal variable and measure the impact of the intervention. However with the growing availability of large observational datasets and advances in statistical methods, other approaches to exploring causal questions are increasingly possible. Here we explore the application of a Bayesian network to answer a causal question in the Household Income and Labour Dynamics in Australia (HILDA) survey.  
+This is an extension of our paper titled ["The Differential Impact of Major Life Events on Cognitive and Affective Wellbeing"](https://www.sciencedirect.com/science/article/pii/S2352827319302204). That paper described the average response to different life-events described in [HILDA](https://melbourneinstitute.unimelb.edu.au/hilda), with the worst events being _divorce, bankruptcy or loss of a spouse_. There we saw that the average response to the worst life events was a resilient u-shaped response in happiness levels, i.e., on average, happiness recovered to the prior baseline.
 
-Bayesian networks are a Graphical model which represent the joint probability distribution between the variables of interest. Graphical models represent variables of interest as nodes and the associations between them as arcs or edges. In a Bayesian network, the edges represent the conditional probability of a node given it's parent. That is, a node may be a child of an upstream variable and a parent of a downstream variable. In a Bayesian network, a node may be conditionally dependent on a number of parent nodes, and also be associated with a number of child nodes. From an intuitive point of view, it can be argued that a “good” Bayesian network should represent the causal structure of the data it is describing. Such networks are usually fairly sparse, and their interpretation is at the same time clear and meaningful (Pearl, 2009). However, learning causal models, especially from observational data, presents significant challenges. Three additional assumptions are needed compared to non-causal Bayesian network learning:  
+This report takes the three worst life-events identified in our previous work (*bankruptcy, divorce, loss*), and identifies three different response-types to those events, i.e., subgroups within the average response, determined by parametric analysis: 1) **resilient**, representing the average response (u-shaped); 2) **vulnerable**, representing a decreasing change in happiness around or after the event; or 3) **relieved**, representing a positive change in happiness around or after the event.  
 
-- There must exist a network structure that is faithful to the dependence structure of the causal system  
-- There must be no latent variables (unobserved variables in the network) acting as confounding factors  
-- Each variable is conditionally independent of its non-effects given its direct causes (this is the Causal Markov Assumption)  
-
-It is worth noting that even when dealing with interventional data (a true experiment), these assumptions may not be met. For instance, there are usually multiple equivalent network structures that could explain the data resulting from a true experiment (e.g., a latent variable could be mediating the effect of the intervention observed or a confound may exist). However one way to ensure the third assumption is met (Causal Markov Assumption) in observational data is to incorporate a unidirectional effect of time in the model. This obviously requires a dataset that is collected over multiple timepoints, and the unidirectional effect of time ensures that associations between variables at  t2 cannot influence variables at t1. One such dataset is provided by the HILDA survey, which has collected responses from more than 17,000 Australians over 16 years. See <https://melbourneinstitute.unimelb.edu.au/hilda>  
-
-The HILDA survey provides a relatively comprehensive assessment of labour force participation, income, family characteristics, as well as personal life events, health and satisfaction. Included in this is the SF-36 health survey, which in turn provides a mental health score derived from agreement with five statements:  
-
-> How much of the time during the past 4 weeks have you :  
-> 1. Been a nervous person  
-> 2. Felt so down in the dumps nothing could cheer you up  
-> 3. Felt calm and peaceful  
-> 4. Felt down  
-> 5. Been a happy person  
-
-This dataset allows us to ask what variables may influence mental health, and vice versa, in the Australian population. Here we apply a **dynamic Bayesian network** analysis to test different causal networks around mental health.  
-
-## Experiment 1  
-There are a variety of variables in the HILDA survey that we could include in our causal model. Initially we will focus on nine variables that represent indicators of **happiness, health, finance, social support, personal control, and relationship satisfaction**. These variables have been selected to represent each category while minimising selection bias as much as possible (e.g., none of the variables depend upon employment or relationship status)  
-
->  1. 'ghmh', MH-I5
->  2. 'losat', life satisfaction
->  3. 'losatyh', health satisfaction
->  4. 'wscei', weekly gross wages/salary
->  5. 'lssupac', I don't have anyone I can confide in
->  6. 'lssupvl', I often feel very lonely
->  7. 'lsrush', feeling rushed
->  8. 'lshrhw', hours per week housework
->  9. 'lsshare', share of housework
-  
-In this experiment we will use the ARTIVA package (in R) to estimate the causal structure that may exist between the variables. 
-```{r, libraries}
-library(tidyverse)
-library(ARTIVA)
-source("src/traceNetwork.R")
-source("src/PlotBubbleGraph.R")
+##### Figure 1. Response types to bad events
+```{r patterns, fig.height = 2.75, eval=T}
+par(mfrow=c(1,3))
+curve(1*x, from=-1, to=1, ylim = c(-1, 1),
+      xlab="", ylab="", main = "relief")
+curve(-1*x, from=-1, to=1, ylim = c(-1, 1),
+      xlab="", ylab="", main = "vulnerable")
+curve(x^2 - 0.5, from=-1, to=1, ylim = c(-1, 1), 
+      xlab="", ylab="", main = "resilient")
 ```
+
+Figure 1 above shows the three different response types to life-events.  
+
+We examine the **social support networks** among the three different subgroups of people which display each response. HILDA offers a variety of variables measuring social support, including:  
+
+1. Loneliness (Agreement with 'I often feel very lonely')
+2. Friendless (Agreement with 'I don't have anyone to confide in')
+3. Unsupported (Agreement with 'I have no one to lean on in times of trouble')
+4. Helpless (Agreement with 'I often need help from people but can't get it')
+5. Helped (Agremeent with 'When I need someone to help me I can usually find someone')  
+
+We also examined _health_ (satisfaction with health) and _happiness_ (sum of SF-36 item 9).  
+
+Other variables which may be included in the future include "feeling part of your local community" (`losatlc`), satisfaction with job security (`jbmssec`), and household net worth (`hwnwip`). See the [HILDA data dictionary](https://www.online.fbe.unimelb.edu.au/HILDAodd/srchVarnameUsingCategoriesCrossWave.aspx) for explanations of these variables.  
+
+The time-varying dependencies among the social support variables over sixteen years were determined in a **Bayesian network**. Bayesian networks are a _graphical_ model which represent the joint probability distribution between the variables of interest. Graphical models represent variables of interest as nodes and the associations between them as arcs or edges. In a Bayesian network, the edges represent the conditional probability of a node given it's parent. A node may be conditionally dependent on a number of parent nodes, and also be associated with a number of child nodes. That is, a node may be a child of an upstream variable and a parent of a downstream variable. ***Dynamic* Bayesian networks** extend this fundamental idea to variables that are represented by nodes over time (i.e., a single variable measured at successive time points). When multiple variables are included, the result is a multivariate time-series. Within the multivariate time series, variables at the same time point cannot influence each other, or nodes at earlier time points; this guarantees the acyclicity of the graph (the Causal Markov Assumption). The unidirectional effect of time prevents feedback loops and is consistent with a causal interpretation of the resulting graph (Pearl, 2009).   
+
+HILDA provides a multivariate time series for our variables of interest from 2001 to 2016. To learn the dynamic Bayesian network amoung our social support variables for each group (resilient, vulnerable and relieved), we used the developer version of the [EDISON](https://github.com/FrankD/EDISON) package. This version has updates to the matrix operations to significantly increase speed and improve performance.  
+
+```
+# Installing the developer version of EDISON:
+devtools::install_github(repo='FrankD/EDISON', 
+                         ref='MultipleTimeSeries', 
+                         subdir='/Package/EDISON')
+```
+
+```{r import_subgroups, include=F}
+# Import the different parametric response-groups identified in for-better-or-
+# worse
+#
+# func to load the subgroups classified by the largest response component
+find_subgroups <- function(parametric_fit) {
   
-### Methods  
-In Experiment 1 we will determine the causal network between nine variables, among the 3206 people with a complete set of variable scores in each wave. However due to computational limitations, we will randomly sample ***n* = 1000** from the total sample. In this way, a unique set of n = 1000 can be obtained up to three times to repeat the experiment and thus test the **replicability** of the obtained causal network. 
-
-
-```{r, eval=FALSE}
-#### load the HILDA dataset ####
-library(tidyverse)
-library(haven)
-source("~/Dropbox/HILDA/src/JoinFrames.R")
-source("~/Dropbox/HILDA/src/GetVarsLong.R")
-source("~/Dropbox/HILDA/src/ZapLabel.R")
-
-filepaths <- list.files(
-  path = '~/Dropbox/HILDA/data',
-  pattern = '^Combined.*.dta$',
-  full.names = TRUE
-)
-
-hildadata <- list()
-for (pathtofile in filepaths) {
-  df <- read_dta(pathtofile)
-  hildadata <- append(hildadata, list(df))
+  coefs <- coef(parametric_fit)[[1]] # a 3D array 
+  individualCoefs <- data.frame(
+    "xwaveid" = rownames(coefs[, , 1]),
+    "comp1" = unname(coefs[, 1, 2]),
+    "comp2" = unname(coefs[, 1, 3]),
+    "comp3" = unname(coefs[, 1, 4])
+  )
+  
+  # Note: ranef() and fixef() can be used to extract the random and fixed effects
+  # 
+  # Find the maximum component and its sign
+  individualCoefs$maxc <- max.col(abs(individualCoefs[, -1]))
+  idx = individualCoefs$maxc+1
+  individualCoefs$maxc <- individualCoefs$maxc*
+    sign(as.numeric(individualCoefs[cbind(seq(length(idx)), idx)]))
+  
+  return(individualCoefs)
 }
 
-#### Create the variable matrices ####
-predictors <- c('ghmh',       # mental health
-                'losat',      # life satisfaction
-                'losatyh',    # health satisfaction
-                'wscei',      # weekly gross wages/salary
-                'lssupac',    # I don't have anyone I can confide in
-                'lssupvl',    # I often feel very lonely
-                'lsrush',     # feeling rushed
-                'lshrhw',     # hours per week housework
-                'lsshare'     # share of housework
-                )
-
-df.long <- GetVarsLong(hildadata, predictors)
-respondants <- unique(df.long$xwaveid)
-df.sample <- filter(df.long, xwaveid %in% sample(respondants, 1000))
-
-df.sample %>%
-  unite(newvar, waveid, xwaveid) %>%
-  spread(newvar, value) %>%
-  remove_rownames() %>%
-  column_to_rownames('hildacode') %>%
-  as.matrix() -> datamatrix
-
-#### Test sample in ARTIVA ####
-targets <- predictors
-parents <- predictors
-N <- length(unique(df.sample$xwaveid))
-
-start_time <- Sys.time()
-results <- ARTIVAnet(
-  targetData = datamatrix[targets, ],
-  parentData = datamatrix[parents, ],
-  targetNames = targets,
-  parentNames = parents,
-  dataDescription = rep(seq(14), each = N),
-  dyn = 1, # minimum lag (0 or 1)
-  edgesThreshold = 0.5,
-  niter = 10000,
-  nbCPinit = 0,
-  maxCP = 0,
-  PSRFactor = FALSE,
-  saveEstimations = TRUE,
-  saveIterations = TRUE,
-  savePictures = TRUE)
-
-end_time <- Sys.time()
-print(end_time - start_time)
-```
-
-### Results  
-The estimation of this network with nine variables takes around 6 days to run. The result table is an 81 row by 7 column table listing the posterior probability of each edge `PostProb` (thresholded to edges with a Pr > 0.5), and the causal strength of the edge `CoeffMean`. Negative values indicate an inhibitory or preventative causal influence:
-
-```{r, echo=FALSE}
-results1 <- read.delim('data/ARTIVA_StationaryNetwork_1.txt')
-results1
-```
-
-The edges and nodes represent the model structure, while the coefficients represent the model parameters. An easier way to visualize the results is a bubble graph.  
-
-Bubble graphs take various forms. Shown below are two variations: **circle** and **Reingold-Tilford**. The circle graph below shows all the nodes and the edges between them with a posterior probability of Pr > 0.95. I.e., we can be very confident that these edges exist in the current dataset. 
-
-```{r, Exp 1 circle}
-# layout = geneLines, random, circle, kamada.kawai, 
-#          reingold.tilford, lgl, graphopt,
-#          mds, fruchterman.reingold 
-traceNetwork(results1, 0.95, layout = 'circle') 
-```
-  
-  We can see by the number of arrows pointing to the mental health score `ghmh` that it occupies a central position (i.e., a hub) in this causal network. Network metrics such as centrality and assortivity can be calculated to confirm this impression (to be done). However the circle layout doesn't reveal a great deal of structure in the network. For that, we must turn to other variants such as the Reingold-Tilford.  
-
-```{r, Exp 1 Reingold-Tilford}
-traceNetwork(results1, 0.95, layout = 'reingold.tilford') 
-```
-
-The Reingold-Tilford graph reveals the mental health score `ghmh` occupies the sole central position in this causal network, under which every other node can be laid in a hierarchy of layers. At the bottom of the network, the relationship variables (based on housework `lsshare`, `lshrhw`) have no direct association with mental health, but every other variable does. However both housework scores indirectly affect mental health via personal control `lsrush` (as does weekly income `wscei`).  
-
-#### Experiment 1 replication  
-Here we replicate Experiment 1 with a new (independent) sample. Time taken was 6.2 days.
-
-```{r, Experiment 1b results, echo=FALSE}
-results2 <- read.delim('data/ARTIVA_StationaryNetwork_2.txt')
-results2
-traceNetwork(results2, 0.95, layout = 'circle')
-traceNetwork(results2, 0.95, layout = 'reingold.tilford')
-```
-
-In comparison to the original sample, there are some differences apparent in the centrality/betweenness of `losat` and `lssupvl`. In the original sample, `ghmh` was clearly the most central variable, receiving the majority of inputs from the other variables. However here `losat` and `lssupvl` have the same number or more inputs than `ghmh`.  
-
-However the Reingold-Tilford layout appears to show that `ghmh` occupies the same root position as before, shown here at the top of the graph. In this respect at least, we may have replicated the graph structure with respect to mental health.
-
-## Experiment 2  
-One assumption of Experiment 1 is the network around mental health is stable across the 14 years of HILDA among our sample. This obviously may not be true for an individual, especially if some personal event has occurred which challenges their life or mental health. A unique feature of ARTIVA is that it can estimate networks which change over time (time-varying networks) by identifying *changepoints* and therefore the different subnetworks on either side of the changepoint. The HILDA dataset offers a unique opportunity to exploit this since it contains self-reported details of ' major life-events' for each respondant in each year. In the present experiment, we identify respondents in HILDA who report a single major life event in the 14 years of the survey, and test whether ARTIVA can detect a changepoint around the time of that life event.
-  
-### Methods  
-Experiment 2 will gather the individuals who report a single negative life event in the 14 years of the survey and test for changepoints in each individual.  
-  
-The variables included in the analysis were:
-
-> 1. 'losat', How satisfied are you with your life  
-> 2. 'losatyh', Your health  
-> 3. 'losateo', Your employment opportunities  
-> 4. 'losatfs', Your financial situation  
-> 5. 'losatft', The amount of free time you have  
-> 6. 'losathl', The home in which you live  
-> 7. 'losatlc', Feeling part of your local community  
-> 8. 'losatnl', The neighbourhood in which you live  
-> 9. 'losatsf', How safe you feel  
-> 10. 'lssupnh', I often need help from others  
-> 11. 'lssupac', I don't have anyone I can confide in  
-> 12. 'lssuplt', I have no one to lean on  
-> 13. 'lssupvl', I often feel very lonely  
-> 14. 'ghmh', mental health  
-  
-This includes all the life satisfaction variables, as well as social support variables, but not the financial, personal control or relationship variables in Experiment 1 (to be done)
-
-```{r, Experiment 2, eval=FALSE}
-#### Get the sample of respondents with life events #####
-lefnw.df <- JoinFrames(hildadata,'lefnw') # finances worse
-lefnw.df[which(lefnw.df < 2, arr.ind=TRUE)] <- NA
-lefnw.df[is.na(lefnw.df)] <- 0
-lefnw.df[which(lefnw.df == 2, arr.ind=TRUE)] <- 1
-colSums(lefnw.df)
-
-ledsc.df <- JoinFrames(hildadata,'ledsc') # death of spouse/child
-ledsc.df[which(ledsc.df < 2, arr.ind=TRUE)] <- NA
-ledsc.df[is.na(ledsc.df)] <- 0
-ledsc.df[which(ledsc.df == 2, arr.ind=TRUE)] <- 1
-colSums(ledsc.df)
-
-leins.df <- JoinFrames(hildadata,'leins') # injury to self
-leins.df[which(leins.df < 2, arr.ind=TRUE)] <- NA
-leins.df[is.na(leins.df)] <- 0
-leins.df[which(leins.df == 2, arr.ind=TRUE)] <- 1
-colSums(leins.df)
-
-# Collate the events
-collated.df <- lefnw.df + leins.df + ledsc.df  # Add all the bad events together
-collated.df[collated.df > 0] <- 1 # recode the events to single
-colSums(collated.df)
-collated.df$sums <- rowSums(collated.df) # Count the events for each person
-collated.df <- rownames_to_column(collated.df, 'xwaveid')
-sample.df <- filter(collated.df, sums == 1) # Find people with just one bad year
-
-#### Create the variable dataframe ####
-predictors <- c('losat',    # How satisfied are you with your life
-                'losatyh',  # Your health
-                'losateo',  # Your employment opportunities
-                'losatfs',  # Your financial situation
-                'losatft',  # The amount of free time you have
-                'losathl',  # The home in which you live
-                'losatlc',  # Feeling part of your local community
-                'losatnl',  # The neighbourhood in which you live
-                'losatsf',  # How safe you feel
-                'lssupnh',  # I often need help from others
-                'lssupac',  # I don't have anyone I can confide in
-                'lssuplt',  # I have no one to lean on
-                'lssupvl',  # I often feel very lonely
-                'ghmh'       # mental health
+# event names
+event_key <- c(
+  `ledsc` = "widowed",
+  `lefnw` = "bankruptcy",
+  `lesep` = "divorce"
 )
 
-df.long <- GetVarsLong(hildadata, predictors, scale = TRUE)
-respondants <- unique(df.long$xwaveid)
+# import subgroups
+subgroups <- map_dfr(
+  .x = read_rds("data/parametric_fits.rds"), 
+  .f = ~find_subgroups(.x), 
+  .id = "eventcode"
+) %>%
+  mutate(eventcode = recode(eventcode, !!!event_key))
 
-start_time <- Sys.time()
-for (w in letters[3:12]) {
+subgroups <- filter(subgroups, maxc %in% c(1, -1, 2)) %>%
+  mutate(response = recode_factor(maxc, 
+                                  `2` = "resilient",
+                                  `-1` = "vulnerable", 
+                                  `1` = "relieved", 
+                                  .default = "undefined"))
+```
+
+```{r import_covariates, include=F}
+# Import outcomes from for-better-or-worse
+df <- read_rds("data/outcomes.rds") %>%
+  rowwise() %>%
+  mutate(year = which(letters == wave) + 2000) %>%
+  ungroup()
+
+# Import covariates from for-better-or-worse and bind with outcomes
+covariates <- read_rds("data/covariates.rds") %>%
+  select(-female) %>%
+  bind_rows(df)
+```
+
+```{r create_inputs, eval=T}
+# target variables
+vars_of_interest <- c(
+  lonely = "lssupvl", # Agreement with I often feel very lonely
+  friend = "lssupac", # Agreement with I don't have anyone to confide in
+  support = "lssuplt", # Agreement with I have no one to lean on in times of trouble
+  helpless = "lssupnh", # Agremeent with I often need help from people but can't get it
+  helped = "lssupsh", # Agreement with When I need someone to help me out I can usually find someone
+  health = "losatyh", # Satisfaction with health
+  happy = "gh9_sum"
+  )
+
+create_input <- function(.df, .event, .subgroup, .variables) {
   
-  sample.id <- sample.df$xwaveid[sample.df[w] > 0]
-  df.sample <- filter(df.long, xwaveid %in% sample.id)
-  selected <- unique(df.sample$xwaveid)
-  print(paste0('****New wave ', w, ' with ', length(selected), ' people****'))
+  # filter the event of interest (e.g., "bankruptcy")
+  df.filtered <- .df %>%
+    filter(eventcode == .event) %>% 
+    select(xwaveid, response) %>%
+    left_join(filter(covariates, code %in% vars_of_interest)) %>%
+    mutate(val = ifelse(val < 0, NA_real_, val)) %>%
+    filter(response == .subgroup) %>%
+    select(xwaveid, wave, code, val) %>%
+    arrange(xwaveid, code, wave)
   
-  #### Test sample in ARTIVA ####
-  targets <- predictors
-  parents <- predictors
-  CPresults <- as.tibble()
-  
-  for (i in seq(length(selected))) {
-    
-    df.subject <- filter(df.sample, xwaveid == selected[i])
-    
-    datamatrix <- df.subject %>%
-      spread(waveid, value) %>%
-      remove_rownames() %>%
-      column_to_rownames('hildacode') %>%
-      dplyr::select(-xwaveid) %>%
-      as.matrix()
-    
-    results <- ARTIVAnet(
-      targetData = datamatrix[targets, ],
-      parentData = datamatrix[parents, ],
-      targetNames = targets,
-      parentNames = parents,
-      dyn = 1, # minimum lag (0 or 1)
-      segMinLength = 2,
-      edgesThreshold = 0.5,
-      niter = 10000,
-      PSRFactor = FALSE,
-      saveEstimations = TRUE,
-      savePictures = TRUE
-    )
-    
-    #### Store CP position ####
-    CPpaths <- list.files(
-      path = 'ARTIVAnet/Estimations',
-      pattern = '^CPpositionPostDist.*.txt$',
-      full.names = TRUE
-    )
-    
-    for (path in CPpaths) {
-      CPtable <- read.csv(path, sep = " ")
-      idx_start <- unlist(gregexpr('_', path)) + 1
-      idx_end <- unlist(gregexpr('.txt', path)) - 1
-      CPtable$var <- substring(path, idx_start, idx_end)
-      CPtable$xwaveid <- selected[i]
-      CPtable <- rownames_to_column(CPtable, 'wave')
-      CPtable$wave <- as.numeric(CPtable$wave) - 7
-      CPresults <- rbind(CPresults, CPtable)
-    }
-    
+  # create a matrix of variables for EDISON
+  matrixlist <- list()
+  for (variable in .variables) {
+    df.filtered %>%
+      filter(code == variable) %>%
+      spread(wave, val) %>%
+      gather(wave, val, a:p) %>% 
+      group_by(xwaveid) %>%
+      fill(val, .direction = "downup") %>%
+      mutate(sval = as.numeric(scale(val))) %>%
+      ungroup() %>%
+      mutate(sval = if_else(is.na(sval), 0, sval)) %>%
+      dplyr::select(-val, -code) %>%
+      spread(wave, sval) %>%
+      column_to_rownames("xwaveid") %>% 
+      as.matrix() -> mat
+    matrixlist[[variable]] <- mat
   }
+  
+  input.array <- simplify2array(matrixlist)
+  
+  return(input.array)
 }
-end_time <- Sys.time()
-print(end_time - start_time)
-write_csv(CPresults, 'results/CPresults.csv')
-```
 
-### Results  
-The analysis took X days, Y hrs, Z min to complete (to be done). The posterior probability of a change point in each wave for each individual and for each variable was calculated.
-
-```{r, echo=FALSE}
-CPresults <- read.csv('data/CPresults.csv')
-CPresults %>%
-  filter(posterior > 0) %>%
-  group_by(wave) %>%
-  summarise(Probability = round(mean(posterior),4),
-            sem = round(sd(posterior)/sqrt(n()),4),
-            n = n()
-            ) %>%
-  as.data.frame()
-```
-
-There is clearly no peak in the average posterior probability of a changepoint near the time of negative life event (wave 0). The *n* in the table above represents the number of datapoints contributing to each mean score. It is a product of the number of variables (e.g., 14) and number of respondents in that wave (e.g., 39).  
+estimate_model <- function(.input) {
   
-We can group the results by each variable to see if a peak appears near the life event (wave 0) for any specific variables.
-
-```{r, Exp 2 by variable}
-# Figure 
-CPresults %>%
-  ggplot(aes(x = wave, y = posterior)) +
-    geom_point() +
-    geom_smooth(method = 'loess', span = 0.25) +
-    facet_wrap(~var) +
-    labs(title = 'Change point posterior distribution',
-         subtitle = 'Grouped by variable',
-         caption = 'ARTIVAnet_bysubject.r')
-```
-
-There is no specific variable with peaks at or near the time of the life event (wave 0). 
+  requireNamespace("EDISON")
   
-We can also filter on the maximum posterior probability of a change point in each variable (and in each individual)
+  # Specify inference with no changepoints
+  edison.options = EDISON::defaultOptions()
+  edison.options$cp.fixed = TRUE
+  
+  start.time <- Sys.time()
+  edison.result = EDISON::EDISON.run(.input, num.iter=50000, options=edison.options)
+  end.time <- Sys.time()
+  print(end.time - start.time)
+  
+  return(edison.result)
+}
 
-```{r, Exp 2 by maximum}
-CPresults %>%
-  filter(posterior > 0) %>%
-  group_by(xwaveid, var) %>%
-  filter(posterior == max(posterior)) %>%
-  ggplot(aes(x = wave, y = posterior)) + 
-    geom_point() + 
-    geom_smooth(method = 'loess', span = 0.45)
+get_network <- function(.results, .variables, .threshold = 0.95) {
+  adj.matrix <- EDISON::calculateEdgeProbabilities(.results)$probs.segs[[1]]
+  colnames(adj.matrix) = rownames(adj.matrix) = names(.variables)
+  network <- igraph::graph_from_adjacency_matrix(adj.matrix > .threshold, diag = F)
+  return(network)
+}
 ```
 
-Here there looks like there is a slight (very slight!) peak in the second wave after the negative life event. To be continued...
+#### Bankruptcy
+
+```{r bankruptcy}
+thisevent = "bankruptcy"
+```
+
+```{r resilient_bankruptcy, include=F}
+responsetype = "resilient"
+resilient.input <- create_input(.df = subgroups,
+                                .event = thisevent, 
+                                .subgroup = responsetype, 
+                                .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+resilient.results <- estimate_model(resilient.input)
+```
+
+```{r vulnerable_bankruptcy, include=F}
+responsetype = "vulnerable"
+vulnerable.input <- create_input(.df = subgroups,
+                                 .event = thisevent, 
+                                 .subgroup = responsetype, 
+                                 .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+vulnerable.results <- estimate_model(vulnerable.input)
+```
+
+```{r relieved_bankruptcy, include=F}
+responsetype = "relieved"
+relieved.input <- create_input(.df = subgroups,
+                               .event = thisevent, 
+                               .subgroup = responsetype, 
+                               .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+relieved.results <- estimate_model(relieved.input)
+```
+
+```{r save_bankruptcy}
+write_rds(
+  list(
+    resilient.results = resilient.results, 
+    vulnerable.results = vulnerable.results, 
+    relieved.results = relieved.results),
+  "results/bankruptcy.rds"
+)
+```
+
+```{r plot_bankruptcy_networks, fig.width=9, fig.height=4, eval=T}
+bankruptcy <- read_rds("results/bankruptcy.rds")
+
+resilient.results  = bankruptcy[['resilient.results']]
+resilient.network <- get_network(.results = resilient.results, 
+                                 .variables = vars_of_interest)
+resilient.degrees <- sort(igraph::degree(resilient.network), decreasing = T)
+
+vulnerable.results = bankruptcy[['vulnerable.results']]
+vulnerable.network <- get_network(.results = vulnerable.results, 
+                                  .variables = vars_of_interest)
+vulnerable.degrees <- sort(igraph::degree(vulnerable.network), decreasing = T)
+
+relieved.results   = bankruptcy[['relieved.results']] 
+relieved.network <- get_network(.results = relieved.results, 
+                                .variables = vars_of_interest)
+relieved.degrees <- sort(igraph::degree(relieved.network), decreasing = T)
+
+par(mfrow=c(1,3))
+
+node_colors = c(rep("lightsteelblue1", 5), "lightsteelblue3", "lightsteelblue3")
+
+igraph::plot.igraph(resilient.network, 
+     main = "Resilient network",
+     vertex.size = 60, 
+     edge.arrow.size=.5, 
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(resilient.network)
+     )
+
+igraph::plot.igraph(vulnerable.network, 
+     main = paste("Vulnerable network"),
+     vertex.size = 60, 
+     edge.arrow.size=.5,
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(vulnerable.network)
+     )
+
+igraph::plot.igraph(relieved.network, 
+     main = paste("Relieved network"),
+     vertex.size = 60, 
+     edge.arrow.size=.5, 
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(relieved.network)
+     )
+```
+
+<br>
+
+The maximum connectedness of the resilient graph was `r max(resilient.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(resilient.degrees), resilient.degrees, sep = ":", collapse = ", ")`.  
+
+The maximum connectedness of the vulnerable graph was `r max(vulnerable.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(vulnerable.degrees), vulnerable.degrees, sep = ":", collapse = ", ")`.  
+
+The maximum connectedness of the resilient graph was `r max(relieved.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(relieved.degrees), relieved.degrees, sep = ":", collapse = ", ")`.  
+
+<br>
+
+#### Divorce
+
+```{r divorce}
+thisevent = "divorce"
+```
+
+
+```{r resilient_divorce, include=F}
+responsetype = "resilient"
+resilient.input <- create_input(.df = subgroups,
+                                .event = thisevent, 
+                                .subgroup = responsetype, 
+                                .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+resilient.results <- estimate_model(resilient.input)
+```
+
+```{r vulnerable_divorce, include=F}
+responsetype = "vulnerable"
+vulnerable.input <- create_input(.df = subgroups,
+                                 .event = thisevent, 
+                                 .subgroup = responsetype, 
+                                 .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+vulnerable.results <- estimate_model(vulnerable.input)
+```
+
+```{r relieved_divorce, include=F}
+responsetype = "relieved"
+relieved.input <- create_input(.df = subgroups,
+                            .event = thisevent, 
+                            .subgroup = responsetype, 
+                            .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+relieved.results <- estimate_model(relieved.input)
+```
+
+```{r save_divorce}
+write_rds(
+  list(
+    resilient.results = resilient.results, 
+    vulnerable.results = vulnerable.results, 
+    relieved.results = relieved.results),
+  "results/divorce.rds"
+)
+```
+
+```{r plot_divorce_networks, fig.width=9, fig.height=4, eval=T}
+divorce <- read_rds("results/divorce.rds")
+
+resilient.results  = divorce[['resilient.results']]
+resilient.network <- get_network(.results = resilient.results, 
+                                 .variables = vars_of_interest)
+resilient.degrees <- sort(igraph::degree(resilient.network), decreasing = T)
+
+vulnerable.results = divorce[['vulnerable.results']]
+vulnerable.network <- get_network(.results = vulnerable.results, 
+                                  .variables = vars_of_interest)
+vulnerable.degrees <- sort(igraph::degree(vulnerable.network), decreasing = T)
+
+relieved.results   = divorce[['relieved.results']] 
+relieved.network <- get_network(.results = relieved.results, 
+                                .variables = vars_of_interest)
+relieved.degrees <- sort(igraph::degree(relieved.network), decreasing = T)
+
+par(mfrow=c(1,3))
+
+node_colors = c(rep("lightsteelblue1", 5), "lightsteelblue3", "lightsteelblue3")
+
+igraph::plot.igraph(resilient.network, 
+     main = "Resilient network",
+     vertex.size = 60, 
+     edge.arrow.size=.5, 
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(resilient.network)
+     )
+
+igraph::plot.igraph(vulnerable.network, 
+     main = paste("Vulnerable network"),
+     vertex.size = 60, 
+     edge.arrow.size=.5,
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(vulnerable.network)
+     )
+
+igraph::plot.igraph(relieved.network, 
+     main = paste("Relieved network"),
+     vertex.size = 60, 
+     edge.arrow.size=.5, 
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(relieved.network)
+     )
+```
+
+<br>
+
+The maximum connectedness of the resilient graph was `r max(resilient.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(resilient.degrees), resilient.degrees, sep = ":", collapse = ", ")`.  
+
+The maximum connectedness of the vulnerable graph was `r max(vulnerable.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(vulnerable.degrees), vulnerable.degrees, sep = ":", collapse = ", ")`.  
+
+The maximum connectedness of the resilient graph was `r max(relieved.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(relieved.degrees), relieved.degrees, sep = ":", collapse = ", ")`.  
+
+<br>
+
+#### Death of partner
+
+```{r widowed}
+thisevent = "widowed"
+```
+
+```{r resilient_widowed, include=F}
+responsetype = "resilient"
+resilient.input <- create_input(.df = subgroups,
+                                .event = thisevent, 
+                                .subgroup = responsetype, 
+                                .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+resilient.results <- estimate_model(resilient.input)
+```
+
+```{r vulnerable_widowed, include=F}
+responsetype = "vulnerable"
+vulnerable.input <- create_input(.df = subgroups,
+                                 .event = thisevent, 
+                                 .subgroup = responsetype, 
+                                 .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+vulnerable.results <- estimate_model(vulnerable.input)
+```
+
+```{r relieved_widowed, include=F}
+responsetype = "relieved"
+relieved.input <- create_input(.df = subgroups,
+                            .event = thisevent, 
+                            .subgroup = responsetype, 
+                            .variables = vars_of_interest)
+
+# Calculate posterior probabilities of the edges in the network
+relieved.results <- estimate_model(relieved.input)
+```
+
+```{r save_widowed}
+write_rds(
+  list(
+    resilient.results = resilient.results, 
+    vulnerable.results = vulnerable.results, 
+    relieved.results = relieved.results),
+  "results/widowed.rds"
+)
+```
+
+```{r plot_widowed_networks, fig.width=9, fig.height=4, eval=T}
+widowed <- read_rds("results/widowed.rds")
+
+resilient.results  = widowed[['resilient.results']]
+resilient.network <- get_network(.results = resilient.results, 
+                                 .variables = vars_of_interest)
+resilient.degrees <- sort(igraph::degree(resilient.network), decreasing = T)
+
+vulnerable.results = widowed[['vulnerable.results']]
+vulnerable.network <- get_network(.results = vulnerable.results, 
+                                  .variables = vars_of_interest)
+vulnerable.degrees <- sort(igraph::degree(vulnerable.network), decreasing = T)
+
+relieved.results   = widowed[['relieved.results']] 
+relieved.network <- get_network(.results = relieved.results, 
+                                .variables = vars_of_interest)
+relieved.degrees <- sort(igraph::degree(relieved.network), decreasing = T)
+
+
+par(mfrow=c(1,3))
+
+node_colors = c(rep("lightsteelblue1", 5), "lightsteelblue3", "lightsteelblue3")
+
+igraph::plot.igraph(resilient.network, 
+     main = "Resilient network",
+     vertex.size = 60, 
+     edge.arrow.size=.5, 
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(resilient.network)
+     )
+
+igraph::plot.igraph(vulnerable.network, 
+     main = paste("Vulnerable network"),
+     vertex.size = 60, 
+     edge.arrow.size=.5,
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(vulnerable.network)
+     )
+
+igraph::plot.igraph(relieved.network, 
+     main = paste("Relieved network"),
+     vertex.size = 60, 
+     edge.arrow.size=.5, 
+     edge.arrow.mode=T,
+     vertex.color=node_colors,
+     vertex.frame.color="grey50",
+     layout = igraph::layout_in_circle(relieved.network)
+     )
+```
+
+<br>
+
+The maximum connectedness of the resilient graph was `r max(resilient.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(resilient.degrees), resilient.degrees, sep = ":", collapse = ", ")`.  
+
+The maximum connectedness of the vulnerable graph was `r max(vulnerable.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(vulnerable.degrees), vulnerable.degrees, sep = ":", collapse = ", ")`.  
+
+The maximum connectedness of the resilient graph was `r max(relieved.degrees)`, and the most interconnected variables (with the largest number of edges) were `r paste(names(relieved.degrees), relieved.degrees, sep = ":", collapse = ", ")`.  
+
+<br>
